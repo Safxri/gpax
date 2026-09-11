@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -10,42 +12,23 @@ export default async function handler(req, res) {
 
   try {
     const { image } = req.body;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // เปลี่ยน v1beta เป็น v1 และระบุเป็น gemini-1.5-flash-latest
-    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
+    const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+    const result = await model.generateContent([
+      "Extract transcript data from this image and return JSON only with fields: student_id, name, gpax, subjects (array of {code, name, credit, grade}).",
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: 'image/jpeg',
+        },
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: "Extract transcript data from this image and return JSON only with fields: student_id, name, gpax, subjects (array of {code, name, credit, grade}).",
-              },
-              {
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: image.split(',')[1] || image,
-                },
-              },
-            ],
-          },
-        ],
-      }),
-    });
+    ]);
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Gemini API Error' });
-    }
-
-    return res.status(200).json(data);
+    const responseText = result.response.text();
+    return res.status(200).send(responseText);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
