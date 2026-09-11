@@ -11,14 +11,13 @@ export default async function handler(req, res) {
   try {
     const { image } = req.body;
 
-    // เปลี่ยน Endpoint ไม่ต้องใส่ ?key= ใน URL
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    // เปลี่ยน v1beta เป็น v1 และระบุเป็น gemini-1.5-flash-latest
+    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // ส่ง Key ผ่าน Header พิเศษของ Google
         'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
